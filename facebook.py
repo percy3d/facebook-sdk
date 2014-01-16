@@ -250,7 +250,6 @@ class GraphAPI(object):
         #it would have been nice to reuse self.request;
         #but multipart is messy in urllib
         #once we have the path to the video, we can prepare the parts for multipart form data
-        print 'video_path', video_path
         fp = open(video_path, 'rb')
         video = fp.read()
         fp.close()
