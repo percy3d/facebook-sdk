@@ -13,10 +13,9 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import facebook
+
 import os
 import unittest
-
 
 class FacebookTestCase(unittest.TestCase):
     """Sets up application ID and secret from environment."""
@@ -40,7 +39,6 @@ class TestGetAppAccessToken(FacebookTestCase):
     def test_get_app_access_token(self):
         assert(isinstance(facebook.get_app_access_token(
             self.app_id, self.secret), str))
-
 
 if __name__ == '__main__':
     unittest.main()

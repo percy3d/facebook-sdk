@@ -40,9 +40,11 @@ import urllib2
 import httplib
 import hashlib
 import hmac
+import mimetypes
 import base64
 import logging
 import socket
+import os
 
 # Find a JSON parser
 try:
@@ -191,7 +193,7 @@ class GraphAPI(object):
 
         conn.close()
 
-    def put_photo(self, image, message=None, album_id=None, **kwargs):
+    def put_photo(self, image_path, message=None, album_id=None, **kwargs):
         """Uploads an image using multipart/form-data.
 
         image=File like object for the image
@@ -203,13 +205,19 @@ class GraphAPI(object):
         object_id = album_id or "me"
         #it would have been nice to reuse self.request;
         #but multipart is messy in urllib
+        fp = open(image_path, 'rb')
+        image = fp.read()
+        fp.close()
+        filename = os.path.basename(image_path)
+        files = [(filename, image_path, image)]
+
         post_args = {
             'access_token': self.access_token,
             'source': image,
             'message': message,
         }
         post_args.update(kwargs)
-        content_type, body = self._encode_multipart_form(post_args)
+        content_type, body = self._encode_multipart_form(post_args, files)
         req = urllib2.Request(("https://graph.facebook.com/%s/photos" %
                                object_id),
                               data=body)
@@ -233,8 +241,55 @@ class GraphAPI(object):
 
         return response
 
+    def put_video(self, video_path, message=None, album_id=None, **kwargs):
+        """
+        uploads a video using multipart/form-data
+        """
+
+        object_id = album_id or "me"
+        #it would have been nice to reuse self.request;
+        #but multipart is messy in urllib
+        #once we have the path to the video, we can prepare the parts for multipart form data
+        print 'video_path', video_path
+        fp = open(video_path, 'rb')
+        video = fp.read()
+        fp.close()
+        print 'video object', dir(video)
+        filename = os.path.basename(video_path)
+        files = [(filename, video_path, video)]
+
+        post_args = {
+            'access_token': self.access_token,
+            'message': message,
+        }
+        
+        post_args.update(kwargs)
+        content_type, body = self._encode_multipart_form(post_args, files)
+        req = urllib2.Request(("https://graph-video.facebook.com/%s/videos" %
+                               object_id),
+                              data=body)
+        req.add_header('Content-Type', content_type)
+        try:
+            data = urllib2.urlopen(req).read()
+        #For Python 3 use this:
+        #except urllib2.HTTPError as e:
+        except urllib2.HTTPError, e:
+            data = e.read()  # Facebook sends OAuth errors as 400, and urllib2
+                             # throws an exception, we want a GraphAPIError
+        try:
+            response = _parse_json(data)
+            # Raise an error if we got one, but don't not if Facebook just
+            # gave us a Bool value
+            if (response and isinstance(response, dict) and
+                    response.get("error")):
+                raise GraphAPIError(response)
+        except ValueError:
+            response = data
+
+        return response
+
     # based on: http://code.activestate.com/recipes/146306/
-    def _encode_multipart_form(self, fields):
+    def _encode_multipart_form(self, fields,files):
         """Encode files as 'multipart/form-data'.
 
         Fields are a dict of form name-> value. For files, value should
@@ -248,30 +303,32 @@ class GraphAPI(object):
         CRLF = '\r\n'
         L = []
         for (key, value) in fields.items():
-            logging.debug("Encoding %s, (%s)%s" % (key, type(value), value))
-            if not value:
-                continue
-            L.append('--' + BOUNDARY)
-            if hasattr(value, 'read') and callable(value.read):
-                filename = getattr(value, 'name', '%s.jpg' % key)
-                L.append(('Content-Disposition: form-data;'
-                          'name="%s";'
-                          'filename="%s"') % (key, filename))
-                L.append('Content-Type: image/jpeg')
-                value = value.read()
-                logging.debug(type(value))
-            else:
+            if value is not None:
+                L.append('--' + BOUNDARY)
                 L.append('Content-Disposition: form-data; name="%s"' % key)
+                L.append('')
+                L.append(str(value))
+        for (key, filename, value) in files:
+            L.append('--' + BOUNDARY)
+            L.append(str('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename)))
+            L.append('Content-Type: %s' % self.get_content_type(filename))
             L.append('')
-            if isinstance(value, unicode):
-                logging.debug("Convert to ascii")
-                value = value.encode('ascii')
             L.append(value)
         L.append('--' + BOUNDARY + '--')
         L.append('')
         body = CRLF.join(L)
         content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
-        return content_type, body
+        return content_type, body       
+
+    def ascii_value(self, value):
+        if isinstance(value, unicode):
+            value = value.encode('ascii')
+
+        return value
+
+    # based on: http://code.activestate.com/recipes/146306/
+    def get_content_type(self, filename):
+        return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
     def request(self, path, args=None, post_args=None):
         """Fetches the given path in the Graph API.
