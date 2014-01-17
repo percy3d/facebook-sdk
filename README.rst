@@ -20,22 +20,25 @@ Basic usage:
     friends = graph.get_connections("me", "friends")
     graph.put_object("me", "feed", message="I am writing on my wall!")
 
-Photo uploads:
+Media Uploads:
+
+We added video posting support and instead of having two separate methods which were nearly identical, besides the post url, 
+it was decided to turn it into one simple method. Note the second last parameter is a boolean telling us what type of media(image or not) is being uploaded. 
+Images and videos are the only mediums currently supported.
 
 ::
 
-    graph = facebook.GraphAPI(oauth_access_token)
-    tags = json.dumps([{'x':50, 'y':50, 'tag_uid':12345}, {'x':10, 'y':60, 'tag_text':'a turtle'}])
-    graph.put_photo('/path/to/img.jpg', 'Look at this cool photo!', album_id_or_None, tags=tags)
-
-
-Video uploads:
-
-::
+    For photo uploads:
 
     graph = facebook.GraphAPI(oauth_access_token)
-    tags = json.dumps([dictionary of other tags])
-    graph.put_video('/path/to/video', 'Look at this cool video!', album_id_or_None, tags=tags)
+    tags = json.dumps({{'x':50, 'y':50, 'tag_uid':12345}, {'x':10, 'y':60, 'tag_text':'a turtle'}, 'message': 'Look at this cool photo!'})
+    graph.put_photo('/path/to/image', , album_id_or_None, True ,tags=tags)
+
+    For video uploads:
+
+    graph = facebook.GraphAPI(oauth_access_token)
+    tags = json.dumps({'message':'Watch this cool video!', 'description':"description goes here..."}
+    graph.put_photo('/path/to/video', 'Look at this cool!', album_id_or_None, False ,tags=tags)   
 
 If you are using the module within a web application with the JavaScript SDK,
 you can also use the module to use Facebook for login, parsing the cookie set

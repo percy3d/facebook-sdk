@@ -193,80 +193,32 @@ class GraphAPI(object):
 
         conn.close()
 
-    def put_photo(self, image_path, message=None, album_id=None, **kwargs):
-        """Uploads an image using multipart/form-data.
-
-        image=File like object for the image
-        message=Caption for your image
-        album_id=None posts to /me/photos which uses or creates and uses
-        an album for your application.
+    def put_media(self, media_path, album_id=None, is_image=True, **kwargs):
 
         """
-        object_id = album_id or "me"
-        #it would have been nice to reuse self.request;
-        #but multipart is messy in urllib
-        fp = open(image_path, 'rb')
-        image = fp.read()
-        fp.close()
-        filename = os.path.basename(image_path)
-        files = [(filename, image_path, image)]
-
-        post_args = {
-            'access_token': self.access_token,
-            'source': image,
-            'message': message,
-        }
-        post_args.update(kwargs)
-        content_type, body = self._encode_multipart_form(post_args, files)
-        req = urllib2.Request(("https://graph.facebook.com/%s/photos" %
-                               object_id),
-                              data=body)
-        req.add_header('Content-Type', content_type)
-        try:
-            data = urllib2.urlopen(req).read()
-        #For Python 3 use this:
-        #except urllib2.HTTPError as e:
-        except urllib2.HTTPError, e:
-            data = e.read()  # Facebook sends OAuth errors as 400, and urllib2
-                             # throws an exception, we want a GraphAPIError
-        try:
-            response = _parse_json(data)
-            # Raise an error if we got one, but don't not if Facebook just
-            # gave us a Bool value
-            if (response and isinstance(response, dict) and
-                    response.get("error")):
-                raise GraphAPIError(response)
-        except ValueError:
-            response = data
-
-        return response
-
-    def put_video(self, video_path, message=None, album_id=None, **kwargs):
-        """
-        uploads a video using multipart/form-data
+        uploads any media(image or video) using multipart/form-data
         """
 
         object_id = album_id or "me"
-        #it would have been nice to reuse self.request;
-        #but multipart is messy in urllib
-        #once we have the path to the video, we can prepare the parts for multipart form data
-        fp = open(video_path, 'rb')
-        video = fp.read()
+        if is_image:
+            url = "https://graph.facebook.com/%s/photos"
+        else:
+            url = "https://graph-video.facebook.com/%s/videos"
+
+        #open up the file and read it to prepare a files list for _encode_multipart_form
+        fp = open(media_path, 'rb')
+        media = fp.read()
         fp.close()
-        print 'video object', dir(video)
-        filename = os.path.basename(video_path)
-        files = [(filename, video_path, video)]
+        filename = os.path.basename(media_path)
+        files = [(filename, media_path, media)]
 
         post_args = {
-            'access_token': self.access_token,
-            'message': message,
+            'access_token': self.access_token, 
         }
         
         post_args.update(kwargs)
         content_type, body = self._encode_multipart_form(post_args, files)
-        req = urllib2.Request(("https://graph-video.facebook.com/%s/videos" %
-                               object_id),
-                              data=body)
+        req = urllib2.Request((url % object_id), data=body)
         req.add_header('Content-Type', content_type)
         try:
             data = urllib2.urlopen(req).read()
