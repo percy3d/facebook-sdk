@@ -56,14 +56,12 @@ you could get the profile of the logged in user with:
 
 You can see a full AppEngine example application in examples/appengine.
 
-Reporting Issues
-================
+Issues
+======
 
-If you have bugs or other issues specifically pertaining to this library, file
-them `here`_. Bugs with the Graph API should be filed on `Facebook's
+This version of the facebook-sdk is provided as is. Bugs with the Graph API should be filed on `Facebook's
 bugtracker`_.
 
-.. _here: https://github.com/pythonforfacebook/facebook-sdk/issues
 .. _Facebook's bugtracker: https://developers.facebook.com/bugs/
 
 
