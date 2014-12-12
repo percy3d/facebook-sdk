@@ -30,12 +30,14 @@ Images and videos are the only mediums currently supported.
 
     For photo uploads:
 
+    kwargs = {'title':'testing', 'description':'just a test'}
     graph = facebook.GraphAPI(oauth_access_token)
-    tags = json.dumps({{'x':50, 'y':50, 'tag_uid':12345}, {'x':10, 'y':60, 'tag_text':'a turtle'}, 'message': 'Look at this cool photo!'})
-    graph.put_photo('/path/to/image', , album_id_or_None, True ,tags=tags)
+    graph.put_media(os.path.join(os.getcwd(), '<sample_photo>.jpg'), None, True, **kwargs)
+
 
     For video uploads:
 
+    kwargs = {'title':'testing', 'description':'just a test'}
     graph = facebook.GraphAPI(oauth_access_token)
     graph.put_media(os.path.join(os.getcwd(), 'sample_video.mp4'), None, False, **kwargs)
 
