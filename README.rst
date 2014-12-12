@@ -37,8 +37,8 @@ Images and videos are the only mediums currently supported.
     For video uploads:
 
     graph = facebook.GraphAPI(oauth_access_token)
-    tags = json.dumps({'message':'Watch this cool video!', 'description':"description goes here..."}
-    graph.put_photo('/path/to/video', 'Look at this cool!', album_id_or_None, False ,tags=tags)   
+    graph.put_media(os.path.join(os.getcwd(), 'sample_video.mp4'), None, False, **kwargs)
+
 
 If you are using the module within a web application with the JavaScript SDK,
 you can also use the module to use Facebook for login, parsing the cookie set
